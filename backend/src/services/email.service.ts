@@ -14,7 +14,7 @@ export interface RecipientInput {
 
 export interface ScheduleBatchInput {
   userId: string;
-  senderId: string;
+  senderId?: string;
   subject: string;
   bodyText: string;
   bodyHtml?: string;
@@ -45,13 +45,37 @@ export class EmailService {
       throw new Error('At least one recipient is required');
     }
 
-    // Verify sender exists
-    const sender = await prisma.senderIdentity.findFirst({
-      where: { id: senderId },
-    });
+    // Verify sender exists, or auto-provision from user
+    let sender = senderId
+      ? await prisma.senderIdentity.findFirst({ where: { id: senderId } })
+      : null;
 
     if (!sender) {
-      throw new Error(`Sender identity with ID ${senderId} not found`);
+      sender = (await prisma.senderIdentity.findFirst({
+        where: { userId, isDefault: true },
+      })) || (await prisma.senderIdentity.findFirst({ where: { userId } }));
+    }
+
+    if (!sender) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      sender = await prisma.senderIdentity.create({
+        data: {
+          userId,
+          email: user?.email || 'oliver.brown@domain.io',
+          name: user?.name || 'Oliver Brown',
+          hourlyLimit,
+          minDelayMs: delaySeconds * 1000,
+          isDefault: true,
+        },
+      });
+    }
+
+    // Update sender's dynamic limit if explicitly passed
+    if (hourlyLimit && sender.hourlyLimit !== hourlyLimit) {
+      await prisma.senderIdentity.update({
+        where: { id: sender.id },
+        data: { hourlyLimit, minDelayMs: delaySeconds * 1000 },
+      });
     }
 
     const scheduledTimestamp = scheduledAt.getTime();
@@ -80,12 +104,12 @@ export class EmailService {
         const leadScheduledTime = new Date(scheduledTimestamp + index * interLeadDelayMs);
         const idempotencyKey = crypto
           .createHash('sha256')
-          .update(`${senderId}:${r.email.toLowerCase()}:${subject}:${leadScheduledTime.getTime()}`)
+          .update(`${sender.id}:${r.email.toLowerCase()}:${subject}:${leadScheduledTime.getTime()}`)
           .digest('hex');
 
         return {
           userId,
-          senderId,
+          senderId: sender.id,
           campaignId: campaign.id,
           recipientEmail: r.email.toLowerCase().trim(),
           recipientName: r.name || null,
@@ -119,7 +143,7 @@ export class EmailService {
       const leadDelayMs = Math.max(0, email.scheduledAt.getTime() - Date.now());
       const jobPayload: EmailDispatchJobData = {
         emailRecordId: email.id,
-        senderId,
+        senderId: sender.id,
         recipientEmail: email.recipientEmail,
         subject,
         scheduledTimestamp: email.scheduledAt.getTime(),
@@ -248,10 +272,29 @@ export class EmailService {
    * Returns all active sender identities for a user.
    */
   public static async getSenders(userId: string) {
-    return prisma.senderIdentity.findMany({
+    let senders = await prisma.senderIdentity.findMany({
       where: { userId },
       orderBy: { isDefault: 'desc' },
     });
+
+    if (senders.length === 0) {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (user) {
+        const newSender = await prisma.senderIdentity.create({
+          data: {
+            userId: user.id,
+            email: user.email,
+            name: user.name,
+            hourlyLimit: env.DEFAULT_MAX_EMAILS_PER_HOUR,
+            minDelayMs: env.DEFAULT_MIN_DELAY_SECONDS * 1000,
+            isDefault: true,
+          },
+        });
+        senders = [newSender];
+      }
+    }
+
+    return senders;
   }
 
   /**

@@ -10,5 +10,6 @@ router.get('/search', EmailController.searchEmails);
 router.get('/senders', EmailController.getSenders);
 router.get('/:id', EmailController.getById);
 router.delete('/:id', EmailController.delete);
+router.post('/reset-rate-limit', EmailController.resetRateLimit);
 
 export default router;

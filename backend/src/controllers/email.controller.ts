@@ -2,9 +2,10 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { EmailService } from '../services/email.service';
 import { ElasticsearchService } from '../services/elasticsearch.service';
+import { RateLimiterService } from '../services/rate-limiter.service';
 
 const scheduleBatchSchema = z.object({
-  senderId: z.string().uuid('Invalid senderId format'),
+  senderId: z.string().optional(),
   subject: z.string().min(1, 'Subject is required').max(500),
   bodyText: z.string().min(1, 'Email body is required'),
   bodyHtml: z.string().optional(),
@@ -171,6 +172,23 @@ export class EmailController {
       return res.json({ success: true, message: 'Email deleted' });
     } catch (error: any) {
       console.error('Error in delete:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * POST /api/emails/reset-rate-limit
+   */
+  public static async resetRateLimit(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || 'default-user-oliver-brown';
+      const senders = await EmailService.getSenders(userId);
+      for (const s of senders) {
+        await RateLimiterService.resetSenderLimits(s.id);
+      }
+      return res.json({ success: true, message: 'Rate limits reset successfully' });
+    } catch (error: any) {
+      console.error('Error in resetRateLimit:', error);
       return res.status(500).json({ error: error.message });
     }
   }

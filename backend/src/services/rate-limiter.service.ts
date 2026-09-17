@@ -13,11 +13,11 @@ local nextHourWindowMs = tonumber(ARGV[4])
 -- 1. Check Hourly Limit
 local currentCount = tonumber(redis.call('GET', hourlyKey) or '0')
 if currentCount >= maxPerHour then
-    -- Check if Slack was already notified for this hour window
+    -- Check if Slack was already notified for this window (15s debounce to prevent spam while allowing interactive testing)
     local alreadyNotified = redis.call('GET', slackNotifiedKey)
     local triggerSlack = 0
     if not alreadyNotified then
-        redis.call('SET', slackNotifiedKey, '1', 'EX', 7200)
+        redis.call('SET', slackNotifiedKey, '1', 'EX', 15)
         triggerSlack = 1
     end
     return {0, nextHourWindowMs, triggerSlack, currentCount}

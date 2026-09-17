@@ -6,5 +6,7 @@ const router = Router();
 router.post('/schedule', EmailController.scheduleBatch);
 router.get('/scheduled', EmailController.getScheduled);
 router.get('/sent', EmailController.getSent);
+router.get('/search', EmailController.searchEmails);
+router.get('/senders', EmailController.getSenders);
 
 export default router;

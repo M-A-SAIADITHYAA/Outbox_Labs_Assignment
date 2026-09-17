@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { EmailService } from '../services/email.service';
+import { ElasticsearchService } from '../services/elasticsearch.service';
 
 const scheduleBatchSchema = z.object({
   senderId: z.string().uuid('Invalid senderId format'),
@@ -111,6 +112,32 @@ export class EmailController {
       return res.json({ senders });
     } catch (error: any) {
       console.error('Error in getSenders:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * GET /api/emails/search
+   */
+  public static async searchEmails(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || 'default-user-oliver-brown';
+      const query = (req.query.q as string) || (req.query.query as string) || '';
+      const status = (req.query.status as string) || undefined;
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const limit = parseInt(req.query.limit as string, 10) || 20;
+
+      const result = await ElasticsearchService.searchEmails({
+        userId,
+        query,
+        status,
+        page,
+        limit,
+      });
+
+      return res.json(result);
+    } catch (error: any) {
+      console.error('Error in searchEmails:', error);
       return res.status(500).json({ error: error.message });
     }
   }

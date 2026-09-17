@@ -32,6 +32,21 @@ export class AuthController {
   }
 
   /**
+   * GET /api/auth/google/url
+   * Returns Google OAuth 2.0 URL as JSON.
+   */
+  public static async getGoogleUrl(req: Request, res: Response) {
+    try {
+      const state = req.query.state as string | undefined;
+      const authUrl = AuthService.getGoogleAuthUrl(state);
+      return res.json({ authUrl });
+    } catch (err: any) {
+      console.error('Error generating Google OAuth URL:', err);
+      return res.status(500).json({ error: 'Failed to generate Google OAuth URL' });
+    }
+  }
+
+  /**
    * GET /api/auth/google/callback
    * Exchanges Google code for tokens, upserts user, and issues HTTP-Only session cookie.
    */

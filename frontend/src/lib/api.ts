@@ -35,7 +35,10 @@ async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> 
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data.error || `HTTP ${res.status}: Failed request`);
+    let msg = data.error;
+    if (!msg && data.message) msg = data.message;
+    if (!msg && data.details) msg = typeof data.details === 'string' ? data.details : JSON.stringify(data.details);
+    throw new Error(msg || `HTTP ${res.status}: Request failed`);
   }
 
   return data as T;

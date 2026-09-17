@@ -35,10 +35,11 @@ export class EmailController {
     try {
       const parsed = scheduleBatchSchema.safeParse(req.body);
       if (!parsed.success) {
-        const firstIssue = parsed.error.issues[0];
-        const errorMsg = firstIssue
-          ? `Validation failed: ${firstIssue.message}`
-          : 'Validation failed';
+        const issues = parsed.error.issues.map((i) => {
+          const path = i.path.join('.');
+          return `${path ? `Field "${path}"` : 'Input'}: ${i.message}`;
+        });
+        const errorMsg = `Validation failed: ${issues.join(' | ')}`;
         return res.status(400).json({
           error: errorMsg,
           details: parsed.error.format(),

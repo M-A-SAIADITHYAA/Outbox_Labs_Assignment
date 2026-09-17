@@ -1,0 +1,137 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum EmailStatus {
+  SCHEDULED
+  DISPATCHING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id               String            @id @default(uuid())
+  googleId         String            @unique
+  email            String            @unique
+  name             String
+  avatarUrl        String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  senders          SenderIdentity[]
+  slackIntegration SlackIntegration?
+  campaigns        Campaign[]
+  emails           EmailRecord[]
+
+  @@index([email])
+}
+
+model SenderIdentity {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email       String
+  name        String
+  hourlyLimit Int           @default(200)
+  minDelayMs  Int           @default(2000)
+  isDefault   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  emails      EmailRecord[]
+
+  @@unique([userId, email])
+  @@index([userId])
+}
+
+model Campaign {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  totalLeads      Int           @default(0)
+  scheduledCount  Int           @default(0)
+  sentCount       Int           @default(0)
+  failedCount     Int           @default(0)
+  hourlyLimit     Int           @default(200)
+  delaySeconds    Int           @default(2)
+  scheduledAt     DateTime
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  emails          EmailRecord[]
+
+  @@index([userId, createdAt])
+}
+
+model EmailRecord {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId         String
+  sender           SenderIdentity  @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  campaignId       String?
+  campaign         Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  
+  recipientEmail   String
+  recipientName    String?
+  subject          String
+  bodyText         String
+  bodyHtml         String?
+  
+  status           EmailStatus     @default(SCHEDULED)
+  scheduledAt      DateTime
+  sentAt           DateTime?
+  
+  // Idempotency & distributed execution tracking
+  idempotencyKey   String          @unique
+  bullMqJobId      String?         @unique
+  smtpMessageId    String?
+  etherealUrl      String?
+  lastError        String?
+  retryCount       Int             @default(0)
+  lockToken        String?
+  lockExpiresAt    DateTime?
+  
+  metadata         Json?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([userId, status, scheduledAt])
+  @@index([senderId, scheduledAt])
+  @@index([status, scheduledAt])
+}
+
+model SlackIntegration {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slackTeamId      String
+  slackTeamName    String
+  slackUserId      String
+  accessToken      String   // Encrypted AES-256-GCM
+  incomingWebhook  String?  // Encrypted AES-256-GCM
+  channelId        String?
+  channelName      String?
+  isActive         Boolean  @default(true)
+  lastNotifiedAt   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId, isActive])
+}
+
+model RateLimitAuditLog {
+  id               String   @id @default(uuid())
+  senderId         String
+  hourWindow       String
+  count            Int
+  limit            Int
+  breachedAt       DateTime @default(now())
+  slackNotified    Boolean  @default(false)
+
+  @@index([senderId, hourWindow])
+}

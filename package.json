@@ -1,0 +1,30 @@
+{
+  "name": "reachinbox-scheduler-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade Email Scheduler with BullMQ, Redis, PostgreSQL, and Elasticsearch",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "test": "npm --prefix backend test"
+  },
+  "keywords": [
+    "reachinbox",
+    "scheduler",
+    "bullmq",
+    "redis",
+    "elasticsearch",
+    "postgresql"
+  ],
+  "author": "M A SAIADITHYAA",
+  "license": "MIT"
+}

@@ -1,0 +1,51 @@
+{
+  "name": "reachinbox-backend",
+  "version": "1.0.0",
+  "description": "ReachInbox Email Scheduler Backend API and Worker Cluster",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc && npx prisma generate",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "test": "jest --runInBand",
+    "test:load-1000": "ts-node src/scripts/load-test-1000.ts"
+  },
+  "dependencies": {
+    "@bull-board/api": "^5.21.4",
+    "@bull-board/express": "^5.21.4",
+    "@elastic/elasticsearch": "^8.13.0",
+    "@prisma/client": "^5.14.0",
+    "@slack/web-api": "^7.1.0",
+    "bullmq": "^5.8.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "google-auth-library": "^9.10.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.13",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.12.12",
+    "@types/nodemailer": "^6.4.15",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "prisma": "^5.14.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  }
+}

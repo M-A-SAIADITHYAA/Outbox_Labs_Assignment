@@ -253,4 +253,32 @@ export class EmailService {
       orderBy: { isDefault: 'desc' },
     });
   }
+
+  /**
+   * Retrieves a single email record by ID.
+   */
+  public static async getEmailById(emailId: string, userId: string) {
+    return prisma.emailRecord.findFirst({
+      where: { id: emailId, userId },
+      include: {
+        sender: { select: { id: true, name: true, email: true } },
+        campaign: { select: { id: true, title: true } },
+      },
+    });
+  }
+
+  /**
+   * Deletes an email record by ID and syncs deletion to search index.
+   */
+  public static async deleteEmail(emailId: string, userId: string) {
+    const deleted = await prisma.emailRecord.deleteMany({
+      where: { id: emailId, userId },
+    });
+
+    await enqueueIndexingJob(emailId, 'delete').catch((err) => {
+      console.warn(`[ES] Failed to enqueue delete job for ${emailId}:`, err.message);
+    });
+
+    return deleted;
+  }
 }

@@ -141,4 +141,37 @@ export class EmailController {
       return res.status(500).json({ error: error.message });
     }
   }
+
+  /**
+   * GET /api/emails/:id
+   */
+  public static async getById(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || 'default-user-oliver-brown';
+      const email = await EmailService.getEmailById(req.params.id, userId);
+
+      if (!email) {
+        return res.status(404).json({ error: 'Email record not found' });
+      }
+
+      return res.json(email);
+    } catch (error: any) {
+      console.error('Error in getById:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * DELETE /api/emails/:id
+   */
+  public static async delete(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || 'default-user-oliver-brown';
+      await EmailService.deleteEmail(req.params.id, userId);
+      return res.json({ success: true, message: 'Email deleted' });
+    } catch (error: any) {
+      console.error('Error in delete:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
 }

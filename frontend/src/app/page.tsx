@@ -114,6 +114,15 @@ function HomePageContent() {
 
   // Initial load
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlToken = params.get('token');
+      if (urlToken) {
+        localStorage.setItem('reachinbox_token', urlToken);
+        const cleanUrl = window.location.pathname + (window.location.hash || '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
     loadUserAndSenders();
   }, [loadUserAndSenders]);
 

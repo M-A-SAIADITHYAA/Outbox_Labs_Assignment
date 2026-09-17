@@ -1,7 +1,9 @@
 const backendUrl = (
   process.env.BACKEND_INTERNAL_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:5001'
+  (process.env.NODE_ENV === 'production'
+    ? 'https://outbox-labs-assignment-nl3b.onrender.com'
+    : 'http://localhost:5001')
 ).replace(/\/$/, '');
 
 const nextConfig = {

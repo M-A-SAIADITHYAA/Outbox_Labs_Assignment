@@ -10,7 +10,7 @@ const COOKIE_NAME = 'reachinbox_session';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: (env.NODE_ENV === 'production' ? 'none' : 'lax') as any,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   path: '/',
 };
@@ -62,7 +62,7 @@ export class AuthController {
       res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
       console.log(`👤 User logged in via Google: ${user.name} (${user.email})`);
 
-      return res.redirect(`${env.FRONTEND_URL}/`);
+      return res.redirect(`${env.FRONTEND_URL}/?token=${token}`);
     } catch (err: any) {
       console.error('Error in Google OAuth callback:', err);
       return res.redirect(`${env.FRONTEND_URL}/login?error=oauth_failed`);

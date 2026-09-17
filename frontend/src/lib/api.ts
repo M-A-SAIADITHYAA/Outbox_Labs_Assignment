@@ -6,13 +6,27 @@ import {
   ScheduleEmailPayload,
 } from './types';
 
-const API_BASE = '/api';
+export const getApiBase = (): string => {
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return '/api';
+    }
+  }
+  return (
+    process.env.NEXT_PUBLIC_API_URL ||
+    'https://outbox-labs-assignment-nl3b.onrender.com'
+  ).replace(/\/$/, '') + '/api';
+};
+
+const API_BASE = getApiBase();
 
 async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('reachinbox_token') : null;
   const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     credentials: 'include',
@@ -34,13 +48,20 @@ export const api = {
   },
 
   async devLogin(email: string, name: string): Promise<{ success: boolean; token: string; user: UserProfile }> {
-    return fetchJson<{ success: boolean; token: string; user: UserProfile }>(`${API_BASE}/auth/dev-login`, {
+    const data = await fetchJson<{ success: boolean; token: string; user: UserProfile }>(`${API_BASE}/auth/dev-login`, {
       method: 'POST',
       body: JSON.stringify({ email, name }),
     });
+    if (data.token && typeof window !== 'undefined') {
+      localStorage.setItem('reachinbox_token', data.token);
+    }
+    return data;
   },
 
   async logout(): Promise<{ success: boolean }> {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('reachinbox_token');
+    }
     return fetchJson<{ success: boolean }>(`${API_BASE}/auth/logout`, {
       method: 'POST',
     });

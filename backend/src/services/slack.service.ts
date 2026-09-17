@@ -41,10 +41,13 @@ export class SlackService {
         }
       }
 
-      const formattedTime = nextWindow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const epochSeconds = Math.floor(nextWindow.getTime() / 1000);
+      const istTime = nextWindow.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+      const utcTime = nextWindow.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' });
+      const localizedSlackTime = `<!date^${epochSeconds}^{time}|${istTime} IST> (${istTime} IST / ${utcTime} UTC)`;
 
       const payload = {
-        text: `🚨 *ReachInbox Rate Limit Alert*: Sender \`${senderEmail}\` reached hourly cap of ${hourlyLimit} emails. Remaining jobs rescheduled to ${formattedTime}.`,
+        text: `🚨 *ReachInbox Rate Limit Alert*: Sender \`${senderEmail}\` reached hourly cap of ${hourlyLimit} emails. Remaining jobs rescheduled to ${istTime} IST (${utcTime} UTC).`,
         blocks: [
           {
             type: 'header',
@@ -67,7 +70,7 @@ export class SlackService {
               },
               {
                 type: 'mrkdwn',
-                text: `*Next Available Window:*\n${formattedTime}`,
+                text: `*Next Available Window:*\n${localizedSlackTime}`,
               },
               {
                 type: 'mrkdwn',

@@ -24,8 +24,7 @@ export class AuthService {
    */
   public static getGoogleAuthUrl(state?: string): string {
     return googleOAuthClient.generateAuthUrl({
-      access_type: 'offline',
-      prompt: 'consent',
+      prompt: 'select_account',
       scope: ['openid', 'email', 'profile'],
       state: state || undefined,
     });

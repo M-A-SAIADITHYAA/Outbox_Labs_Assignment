@@ -330,11 +330,10 @@ export class EmailService {
    */
   public static async reconcileOverdueEmails(): Promise<number> {
     const now = new Date();
-    // Release any stale DISPATCHING locks back to SCHEDULED
+    // Release any stale DISPATCHING or FAILED locks back to SCHEDULED
     await prisma.emailRecord.updateMany({
       where: {
-        status: 'DISPATCHING',
-        lockExpiresAt: { lt: now },
+        status: { in: ['DISPATCHING', 'FAILED'] },
       },
       data: {
         status: 'SCHEDULED',

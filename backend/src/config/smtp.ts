@@ -9,21 +9,16 @@ export async function getSmtpTransporter(): Promise<nodemailer.Transporter> {
     return transporter;
   }
 
-  let user = env.ETHEREAL_USER;
-  let pass = env.ETHEREAL_PASS;
-
-  if (!user || !pass) {
-    console.log('📬 No Ethereal credentials provided in .env, generating test account...');
-    etherealAccount = await nodemailer.createTestAccount();
-    user = etherealAccount.user;
-    pass = etherealAccount.pass;
-    console.log(`✨ Generated Ethereal Test Account: ${user}`);
-  }
+  let user = env.ETHEREAL_USER || 'tl762wdpy64hb4uy@ethereal.email';
+  let pass = env.ETHEREAL_PASS || 'au49CCZKh2DyP5Xycf';
 
   transporter = nodemailer.createTransport({
-    host: env.ETHEREAL_HOST,
-    port: env.ETHEREAL_PORT,
-    secure: env.ETHEREAL_PORT === 465,
+    host: env.ETHEREAL_HOST || 'smtp.ethereal.email',
+    port: env.ETHEREAL_PORT || 587,
+    secure: false,
+    connectionTimeout: 10000,
+    greetingTimeout: 5000,
+    socketTimeout: 15000,
     auth: {
       user,
       pass,

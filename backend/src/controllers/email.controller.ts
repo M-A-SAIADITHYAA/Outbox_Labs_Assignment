@@ -209,6 +209,8 @@ export class EmailController {
           sentAt: true,
           lockToken: true,
           lockExpiresAt: true,
+          lastError: true,
+          retryCount: true,
           createdAt: true,
         },
       });

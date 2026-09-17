@@ -139,4 +139,16 @@ export class RateLimiterService {
 
     await redisClient.del(hourlyKey, lastSendKey, slackNotifiedKey);
   }
+
+  /**
+   * Resets all rate-limiting counters across all senders in Redis.
+   */
+  public static async resetAllLimits(): Promise<number> {
+    const keys = await redisClient.keys('ratelimit:*');
+    if (keys.length > 0) {
+      await redisClient.del(...keys);
+      return keys.length;
+    }
+    return 0;
+  }
 }

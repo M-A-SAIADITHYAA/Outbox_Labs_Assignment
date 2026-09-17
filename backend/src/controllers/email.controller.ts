@@ -181,12 +181,8 @@ export class EmailController {
    */
   public static async resetRateLimit(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id || 'default-user-oliver-brown';
-      const senders = await EmailService.getSenders(userId);
-      for (const s of senders) {
-        await RateLimiterService.resetSenderLimits(s.id);
-      }
-      return res.json({ success: true, message: 'Rate limits reset successfully' });
+      const keysCleared = await RateLimiterService.resetAllLimits();
+      return res.json({ success: true, message: 'Rate limits reset successfully', keysCleared });
     } catch (error: any) {
       console.error('Error in resetRateLimit:', error);
       return res.status(500).json({ error: error.message });

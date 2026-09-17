@@ -40,7 +40,7 @@ export async function enqueueEmailDispatchJob(
   data: EmailDispatchJobData,
   delayMs: number = 0
 ) {
-  const jobId = `dispatch:${data.emailRecordId}`;
+  const jobId = `dispatch-${data.emailRecordId}`;
 
   const jobOptions: JobsOptions = {
     jobId,

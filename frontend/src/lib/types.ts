@@ -57,7 +57,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ScheduleEmailPayload {
-  senderId: string;
+  senderId?: string;
   subject: string;
   bodyText: string;
   bodyHtml?: string;

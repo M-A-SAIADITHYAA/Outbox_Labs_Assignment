@@ -44,6 +44,12 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
   );
   const [senderDropdownOpen, setSenderDropdownOpen] = useState(false);
 
+  React.useEffect(() => {
+    if (!selectedSenderId && senders.length > 0) {
+      setSelectedSenderId(senders.find((s) => s.isDefault)?.id || senders[0]?.id || '');
+    }
+  }, [senders, selectedSenderId]);
+
   // Recipients
   const [recipients, setRecipients] = useState<string[]>([]);
   const [recipientInput, setRecipientInput] = useState('');
@@ -162,7 +168,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
       const sendTime = scheduledAt || new Date(Date.now() + 1000); // Now or scheduled
 
       await api.scheduleBatch({
-        senderId: selectedSenderId,
+        senderId: selectedSenderId || undefined,
         subject,
         bodyText,
         recipients: allRecipients.map((email) => ({ email })),

@@ -5,10 +5,23 @@ import { env } from '../config/env';
 
 const prisma = new PrismaClient();
 
+const getGoogleCallbackUrl = () => {
+  if (process.env.GOOGLE_CALLBACK_URL && !process.env.GOOGLE_CALLBACK_URL.includes('localhost')) {
+    return process.env.GOOGLE_CALLBACK_URL;
+  }
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return `${process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '')}/api/auth/google/callback`;
+  }
+  if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+    return 'https://outbox-labs-assignment-nl3b.onrender.com/api/auth/google/callback';
+  }
+  return env.GOOGLE_CALLBACK_URL;
+};
+
 const googleOAuthClient = new OAuth2Client(
   env.GOOGLE_CLIENT_ID,
   env.GOOGLE_CLIENT_SECRET,
-  env.GOOGLE_CALLBACK_URL
+  getGoogleCallbackUrl()
 );
 
 export interface SessionUser {

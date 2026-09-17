@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { CryptoService } from './crypto.service';
 
 const prisma = new PrismaClient();
 
@@ -20,6 +21,16 @@ export class SlackService {
       if (!integration || !integration.isActive || !integration.incomingWebhook) {
         console.log(`ℹ️ Slack notification skipped: User ${userId} has no active Slack webhook.`);
         return false;
+      }
+
+      // Decrypt incoming webhook URL using AES-256-GCM
+      let webhookUrl = integration.incomingWebhook;
+      if (webhookUrl.includes(':')) {
+        try {
+          webhookUrl = CryptoService.decrypt(webhookUrl);
+        } catch {
+          // If already plain text (e.g. legacy test data)
+        }
       }
 
       const formattedTime = nextWindow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -59,7 +70,7 @@ export class SlackService {
         ],
       };
 
-      const response = await fetch(integration.incomingWebhook, {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -6,7 +6,10 @@ import { env } from './config/env';
 import { redisClient } from './config/redis';
 import emailRoutes from './routes/email.routes';
 import adminRoutes from './routes/admin.routes';
+import authRoutes from './routes/auth.routes';
+import slackRoutes from './routes/slack.routes';
 import { EmailController } from './controllers/email.controller';
+import { optionalAuth } from './middleware/auth.middleware';
 
 const prisma = new PrismaClient();
 export const app = express();
@@ -63,8 +66,10 @@ app.get('/api/health', async (req: Request, res: Response) => {
 });
 
 // Mount Routes
-app.use('/api/emails', emailRoutes);
-app.get('/api/senders', EmailController.getSenders);
+app.use('/api/auth', authRoutes);
+app.use('/api/slack', slackRoutes);
+app.use('/api/emails', optionalAuth, emailRoutes);
+app.get('/api/senders', optionalAuth, EmailController.getSenders);
 app.use('/admin/queues', adminRoutes);
 
 // Global Error Handler

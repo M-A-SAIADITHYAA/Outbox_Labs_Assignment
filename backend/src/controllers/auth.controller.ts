@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
-import { env } from '../config/env';
+import { env, getFrontendUrl } from '../config/env';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { PrismaClient } from '@prisma/client';
 
@@ -53,7 +53,7 @@ export class AuthController {
   public static async googleCallback(req: Request, res: Response) {
     const code = req.query.code as string;
     if (!code) {
-      return res.status(400).redirect(`${env.FRONTEND_URL}/login?error=missing_code`);
+      return res.status(400).redirect(`${getFrontendUrl()}/login?error=missing_code`);
     }
 
     try {
@@ -62,10 +62,10 @@ export class AuthController {
       res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
       console.log(`👤 User logged in via Google: ${user.name} (${user.email})`);
 
-      return res.redirect(`${env.FRONTEND_URL}/?token=${token}`);
+      return res.redirect(`${getFrontendUrl()}/?token=${token}`);
     } catch (err: any) {
       console.error('Error in Google OAuth callback:', err);
-      return res.redirect(`${env.FRONTEND_URL}/login?error=oauth_failed`);
+      return res.status(400).redirect(`${getFrontendUrl()}/login?error=oauth_failed`);
     }
   }
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
-import { env } from '../config/env';
+import { env, getFrontendUrl } from '../config/env';
 import { redisClient } from '../config/redis';
 import { CryptoService } from '../services/crypto.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
@@ -46,7 +46,7 @@ export class SlackController {
     const state = req.query.state as string;
 
     if (!code || !state) {
-      return res.status(400).redirect(`${env.FRONTEND_URL}/?slack=error&msg=missing_code_or_state`);
+      return res.status(400).redirect(`${getFrontendUrl()}/?slack=error&msg=missing_code_or_state`);
     }
 
     try {
@@ -54,7 +54,7 @@ export class SlackController {
       const storedUserId = await redisClient.get(`slack:state:${state}`);
       if (!storedUserId) {
         console.warn('⚠️ Slack OAuth state mismatch or expired nonce:', state);
-        return res.status(400).redirect(`${env.FRONTEND_URL}/?slack=error&msg=invalid_state`);
+        return res.status(400).redirect(`${getFrontendUrl()}/?slack=error&msg=invalid_state`);
       }
 
       // Invalidate state immediately to prevent replay attacks
@@ -78,7 +78,7 @@ export class SlackController {
 
       if (!data.ok) {
         console.error('❌ Slack token exchange failed:', data.error);
-        return res.redirect(`${env.FRONTEND_URL}/?slack=error&msg=${encodeURIComponent(data.error)}`);
+        return res.redirect(`${getFrontendUrl()}/?slack=error&msg=${encodeURIComponent(data.error)}`);
       }
 
       // 3. Encrypt sensitive tokens with AES-256-GCM
@@ -113,10 +113,10 @@ export class SlackController {
       });
 
       console.log(`💬 Slack successfully connected for user ${storedUserId} (${data.team?.name})`);
-      return res.redirect(`${env.FRONTEND_URL}/?slack=connected`);
+      return res.redirect(`${getFrontendUrl()}/?slack=connected`);
     } catch (err: any) {
       console.error('❌ Error handling Slack callback:', err);
-      return res.redirect(`${env.FRONTEND_URL}/?slack=error&msg=internal_error`);
+      return res.redirect(`${getFrontendUrl()}/?slack=error&msg=internal_error`);
     }
   }
 

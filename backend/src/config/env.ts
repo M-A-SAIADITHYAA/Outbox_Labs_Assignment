@@ -60,3 +60,13 @@ if (!parsedEnv.success) {
 }
 
 export const env = parsedEnv.data;
+
+export const getFrontendUrl = (): string => {
+  if (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost')) {
+    return process.env.FRONTEND_URL.replace(/\/$/, '');
+  }
+  if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+    return 'https://outbox-labs-assignment-frontend.vercel.app';
+  }
+  return env.FRONTEND_URL.replace(/\/$/, '');
+};

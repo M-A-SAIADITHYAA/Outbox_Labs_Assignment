@@ -1,15 +1,20 @@
 import { app } from './app';
 import { env } from './config/env';
 import { emailWorker } from './workers/email.worker';
+import { indexingWorker } from './workers/indexing.worker';
 import { redisClient } from './config/redis';
 import { PrismaClient } from '@prisma/client';
+import { ensureIndexExists } from './config/elasticsearch';
 
 const prisma = new PrismaClient();
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, async () => {
   console.log(`\n🚀 ReachInbox Backend Server running on http://localhost:${env.PORT}`);
   console.log(`📊 Bull-Board Queue Dashboard mounted at http://localhost:${env.PORT}/admin/queues`);
   console.log(`🩺 Healthcheck available at http://localhost:${env.PORT}/api/health\n`);
+
+  // Initialize search index
+  await ensureIndexExists();
 });
 
 // Graceful Shutdown
@@ -20,9 +25,12 @@ async function gracefulShutdown(signal: string) {
     console.log('HTTP server closed.');
 
     try {
-      console.log('Closing BullMQ worker...');
-      await emailWorker.close();
-      console.log('BullMQ worker closed.');
+      console.log('Closing BullMQ workers...');
+      await Promise.all([
+        emailWorker.close(),
+        indexingWorker.close(),
+      ]);
+      console.log('BullMQ workers closed.');
 
       console.log('Closing Redis connection...');
       await redisClient.quit();

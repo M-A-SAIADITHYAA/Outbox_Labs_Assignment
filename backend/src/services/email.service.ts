@@ -1,6 +1,7 @@
 import { PrismaClient, EmailStatus } from '@prisma/client';
 import crypto from 'crypto';
 import { enqueueEmailDispatchJob, EmailDispatchJobData } from '../queues/email.queue';
+import { enqueueIndexingJob } from '../queues/indexing.queue';
 import { env } from '../config/env';
 
 const prisma = new PrismaClient();
@@ -131,6 +132,13 @@ export class EmailService {
     });
 
     await Promise.all(enqueuePromises);
+
+    // 4. Asynchronously enqueue background search indexing jobs
+    result.createdEmails.forEach((email) => {
+      enqueueIndexingJob(email.id, 'index').catch((err) => {
+        console.warn(`[ES] Failed to enqueue initial index job for email ${email.id}:`, err.message);
+      });
+    });
 
     console.log(
       `📅 Successfully scheduled campaign ${result.campaign.id} with ${result.createdEmails.length} emails. First job delay: ${baseDelayMs}ms`

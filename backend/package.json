@@ -18,6 +18,7 @@
     "@bull-board/api": "^5.21.4",
     "@bull-board/express": "^5.21.4",
     "@elastic/elasticsearch": "^8.13.0",
+    "@opensearch-project/opensearch": "^3.6.0",
     "@prisma/client": "^5.14.0",
     "@slack/web-api": "^7.1.0",
     "bullmq": "^5.8.4",

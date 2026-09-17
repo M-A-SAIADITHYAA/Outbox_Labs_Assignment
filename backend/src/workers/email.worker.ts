@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { env } from '../config/env';
 import { redisConnectionOptions } from '../config/redis';
 import { EMAIL_DISPATCH_QUEUE_NAME, EmailDispatchJobData, enqueueEmailDispatchJob } from '../queues/email.queue';
+import { enqueueIndexingJob } from '../queues/indexing.queue';
 import { RateLimiterService } from '../services/rate-limiter.service';
 import { sendEmail } from '../config/smtp';
 import { SlackService } from '../services/slack.service';
@@ -166,6 +167,11 @@ export const emailWorker = new Worker<EmailDispatchJobData>(
           },
         });
       }
+
+      // 7. Update search index with SENT status
+      await enqueueIndexingJob(emailRecordId, 'index').catch((err) => {
+        console.warn(`[ES] Failed to enqueue search update for sent email ${emailRecordId}:`, err.message);
+      });
 
       return {
         success: true,

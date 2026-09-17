@@ -126,11 +126,25 @@ export class SlackController {
   public static async getStatus(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.user?.id || 'default-user-oliver-brown';
-      const integration = await prisma.slackIntegration.findUnique({
+      let integration = await prisma.slackIntegration.findUnique({
         where: { userId },
       });
 
       if (!integration || !integration.isActive) {
+        integration = await prisma.slackIntegration.findFirst({
+          where: { isActive: true },
+        });
+      }
+
+      if (!integration || !integration.isActive) {
+        if (env.SLACK_WEBHOOK_URL) {
+          return res.json({
+            connected: true,
+            teamName: 'Slack Workspace',
+            channelName: '#general',
+            lastNotifiedAt: null,
+          });
+        }
         return res.json({ connected: false });
       }
 

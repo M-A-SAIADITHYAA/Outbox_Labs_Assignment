@@ -44,10 +44,11 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16).default('development-super-secret-jwt-key-min-32-chars-long!'),
   ENCRYPTION_KEY: z.string().length(64).default('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),
 
-  // Slack OAuth
+  // Slack OAuth & Webhook
   SLACK_CLIENT_ID: z.string().default('dummy-slack-client-id'),
   SLACK_CLIENT_SECRET: z.string().default('dummy-slack-client-secret'),
   SLACK_REDIRECT_URI: z.string().default('http://localhost:5000/api/slack/callback'),
+  SLACK_WEBHOOK_URL: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

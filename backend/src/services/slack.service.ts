@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { CryptoService } from './crypto.service';
+import { env } from '../config/env';
 
 const prisma = new PrismaClient();
 
@@ -14,22 +15,29 @@ export class SlackService {
     nextWindow: Date
   ): Promise<boolean> {
     try {
-      const integration = await prisma.slackIntegration.findUnique({
+      let integration = await prisma.slackIntegration.findUnique({
         where: { userId },
       });
 
       if (!integration || !integration.isActive || !integration.incomingWebhook) {
-        console.log(`ℹ️ Slack notification skipped: User ${userId} has no active Slack webhook.`);
+        integration = await prisma.slackIntegration.findFirst({
+          where: { isActive: true, incomingWebhook: { not: null } },
+        });
+      }
+
+      let webhookUrl = integration?.incomingWebhook || env.SLACK_WEBHOOK_URL;
+
+      if (!webhookUrl) {
+        console.log(`ℹ️ Slack notification skipped: No active Slack webhook found for user ${userId}.`);
         return false;
       }
 
-      // Decrypt incoming webhook URL using AES-256-GCM
-      let webhookUrl = integration.incomingWebhook;
-      if (webhookUrl.includes(':')) {
+      // Decrypt incoming webhook URL using AES-256-GCM if encrypted
+      if (webhookUrl.includes(':') && !webhookUrl.startsWith('https://hooks.slack.com/')) {
         try {
           webhookUrl = CryptoService.decrypt(webhookUrl);
         } catch {
-          // If already plain text (e.g. legacy test data)
+          // If already plain text
         }
       }
 

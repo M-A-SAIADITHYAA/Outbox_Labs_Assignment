@@ -82,20 +82,42 @@ export class AuthController {
         return res.status(404).json({ error: 'User not found' });
       }
 
+      let slackConnected = user.slackIntegration?.isActive ?? false;
+      let slackDetails = slackConnected && user.slackIntegration
+        ? {
+            teamName: user.slackIntegration.slackTeamName,
+            channelName: user.slackIntegration.channelName,
+            lastNotifiedAt: user.slackIntegration.lastNotifiedAt,
+          }
+        : null;
+
+      if (!slackConnected) {
+        const anyActive = await prisma.slackIntegration.findFirst({ where: { isActive: true } });
+        if (anyActive) {
+          slackConnected = true;
+          slackDetails = {
+            teamName: anyActive.slackTeamName,
+            channelName: anyActive.channelName,
+            lastNotifiedAt: anyActive.lastNotifiedAt,
+          };
+        } else if (env.SLACK_WEBHOOK_URL) {
+          slackConnected = true;
+          slackDetails = {
+            teamName: 'Slack Workspace',
+            channelName: '#general',
+            lastNotifiedAt: null,
+          };
+        }
+      }
+
       return res.json({
         user: {
           id: user.id,
           name: user.name,
           email: user.email,
           avatarUrl: user.avatarUrl,
-          slackConnected: user.slackIntegration?.isActive ?? false,
-          slackDetails: user.slackIntegration?.isActive
-            ? {
-                teamName: user.slackIntegration.slackTeamName,
-                channelName: user.slackIntegration.channelName,
-                lastNotifiedAt: user.slackIntegration.lastNotifiedAt,
-              }
-            : null,
+          slackConnected,
+          slackDetails,
         },
       });
     } catch (err: any) {

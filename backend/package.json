@@ -12,7 +12,9 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
     "test": "jest --runInBand",
-    "test:load-1000": "ts-node src/scripts/load-test-1000.ts"
+    "test:load-1000": "ts-node src/scripts/load-test-1000.ts",
+    "test:crash": "ts-node src/scripts/test-crash-resilience.ts",
+    "test:phase5": "ts-node src/scripts/test-phase5.ts"
   },
   "dependencies": {
     "@bull-board/api": "^5.21.4",

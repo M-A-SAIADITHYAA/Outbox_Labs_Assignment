@@ -42,7 +42,10 @@ export const emailWorker = new Worker<EmailDispatchJobData>(
     const lockResult = await prisma.emailRecord.updateMany({
       where: {
         id: emailRecordId,
-        status: { in: ['SCHEDULED', 'FAILED'] },
+        OR: [
+          { status: { in: ['SCHEDULED', 'FAILED'] } },
+          { status: 'DISPATCHING', lockExpiresAt: { lt: now } },
+        ],
       },
       data: {
         status: 'DISPATCHING',

@@ -40,7 +40,7 @@ export async function enqueueEmailDispatchJob(
   data: EmailDispatchJobData,
   delayMs: number = 0
 ) {
-  const jobId = `dispatch-${data.emailRecordId}`;
+  const jobId = `dispatch-${data.emailRecordId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
   const jobOptions: JobsOptions = {
     jobId,

@@ -5,6 +5,7 @@ import { indexingWorker } from './workers/indexing.worker';
 import { redisClient } from './config/redis';
 import { PrismaClient } from '@prisma/client';
 import { ensureIndexExists } from './config/elasticsearch';
+import { EmailService } from './services/email.service';
 
 const prisma = new PrismaClient();
 
@@ -15,6 +16,13 @@ const server = app.listen(env.PORT, async () => {
 
   // Initialize search index
   await ensureIndexExists();
+
+  // Reconcile and dispatch any overdue scheduled emails from database
+  try {
+    await EmailService.reconcileOverdueEmails();
+  } catch (err: any) {
+    console.error('⚠️ Failed to reconcile overdue emails on startup:', err.message);
+  }
 });
 
 // Graceful Shutdown

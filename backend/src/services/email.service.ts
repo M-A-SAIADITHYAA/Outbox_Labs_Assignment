@@ -324,4 +324,48 @@ export class EmailService {
 
     return deleted;
   }
+
+  /**
+   * Recovers and dispatches any overdue SCHEDULED emails from PostgreSQL.
+   */
+  public static async reconcileOverdueEmails(): Promise<number> {
+    const now = new Date();
+    // Release any stale DISPATCHING locks back to SCHEDULED
+    await prisma.emailRecord.updateMany({
+      where: {
+        status: 'DISPATCHING',
+        lockExpiresAt: { lt: now },
+      },
+      data: {
+        status: 'SCHEDULED',
+        lockToken: null,
+        lockExpiresAt: null,
+      },
+    });
+
+    // Find all SCHEDULED emails whose scheduled send time is <= now
+    const overdueEmails = await prisma.emailRecord.findMany({
+      where: {
+        status: 'SCHEDULED',
+        scheduledAt: { lte: now },
+      },
+      include: { sender: true },
+    });
+
+    console.log(`[Reconciler] 🔄 Found ${overdueEmails.length} overdue scheduled emails in PostgreSQL.`);
+
+    for (const email of overdueEmails) {
+      await enqueueEmailDispatchJob({
+        emailRecordId: email.id,
+        senderId: email.senderId,
+        recipientEmail: email.recipientEmail,
+        subject: email.subject,
+        scheduledTimestamp: email.scheduledAt.getTime(),
+        hourlyLimit: email.sender.hourlyLimit,
+        minDelayMs: email.sender.minDelayMs,
+      }, 0);
+    }
+
+    return overdueEmails.length;
+  }
 }

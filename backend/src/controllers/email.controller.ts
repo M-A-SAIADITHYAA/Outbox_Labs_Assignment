@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { PrismaClient } from '@prisma/client';
 import { EmailService } from '../services/email.service';
 import { ElasticsearchService } from '../services/elasticsearch.service';
 import { RateLimiterService } from '../services/rate-limiter.service';
+
+const prisma = new PrismaClient();
 
 const scheduleBatchSchema = z.object({
   senderId: z.string().optional(),
@@ -185,6 +188,49 @@ export class EmailController {
       return res.json({ success: true, message: 'Rate limits reset successfully', keysCleared });
     } catch (error: any) {
       console.error('Error in resetRateLimit:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * GET /api/emails/debug-status
+   */
+  public static async debugStatus(req: Request, res: Response) {
+    try {
+      const emailRecords = await prisma.emailRecord.findMany({
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          recipientEmail: true,
+          subject: true,
+          status: true,
+          scheduledAt: true,
+          sentAt: true,
+          lockToken: true,
+          lockExpiresAt: true,
+          createdAt: true,
+        },
+      });
+
+      return res.json({
+        serverTime: new Date().toISOString(),
+        emailRecords,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * POST /api/emails/reconcile-overdue
+   */
+  public static async reconcileOverdue(req: Request, res: Response) {
+    try {
+      const count = await EmailService.reconcileOverdueEmails();
+      return res.json({ success: true, message: `Reconciled ${count} emails`, count });
+    } catch (error: any) {
+      console.error('Error in reconcileOverdue:', error);
       return res.status(500).json({ error: error.message });
     }
   }

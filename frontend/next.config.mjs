@@ -1,14 +1,19 @@
-/** @type {import('next').NextConfig} */
+const backendUrl = (
+  process.env.BACKEND_INTERNAL_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:5001'
+).replace(/\/$/, '');
+
 const nextConfig = {
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5001/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
       },
       {
         source: '/admin/queues/:path*',
-        destination: 'http://localhost:5001/admin/queues/:path*',
+        destination: `${backendUrl}/admin/queues/:path*`,
       },
     ];
   },

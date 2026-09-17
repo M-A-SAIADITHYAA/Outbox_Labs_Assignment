@@ -89,10 +89,12 @@ export class SlackService {
         return false;
       }
 
-      await prisma.slackIntegration.update({
-        where: { id: integration.id },
-        data: { lastNotifiedAt: new Date() },
-      });
+      if (integration?.id) {
+        await prisma.slackIntegration.update({
+          where: { id: integration.id },
+          data: { lastNotifiedAt: new Date() },
+        });
+      }
 
       console.log(`📢 Successfully posted rate limit alert to Slack for sender ${senderEmail}`);
       return true;

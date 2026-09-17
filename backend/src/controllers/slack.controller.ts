@@ -167,4 +167,75 @@ export class SlackController {
       return res.status(500).json({ error: err.message });
     }
   }
+
+  /**
+   * POST /api/slack/webhook
+   * Allows saving an incoming webhook URL directly (ideal for testing and custom webhooks).
+   */
+  public static async saveWebhook(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id || 'default-user-oliver-brown';
+      const { webhookUrl, channelName = '#rate-limit-alerts' } = req.body;
+
+      if (!webhookUrl || typeof webhookUrl !== 'string' || !webhookUrl.startsWith('https://hooks.slack.com/')) {
+        return res.status(400).json({ error: 'Valid Slack webhook URL is required (must start with https://hooks.slack.com/)' });
+      }
+
+      const encryptedWebhook = CryptoService.encrypt(webhookUrl.trim());
+
+      await prisma.slackIntegration.upsert({
+        where: { userId },
+        update: {
+          incomingWebhook: encryptedWebhook,
+          channelName,
+          slackTeamName: 'Slack Alerts Channel',
+          isActive: true,
+        },
+        create: {
+          userId,
+          slackTeamId: 'manual-team',
+          slackTeamName: 'Slack Alerts Channel',
+          slackUserId: 'manual-user',
+          accessToken: CryptoService.encrypt('manual-token'),
+          incomingWebhook: encryptedWebhook,
+          channelName,
+          isActive: true,
+        },
+      });
+
+      console.log(`🔗 Direct Slack webhook configured for user ${userId}`);
+      return res.json({ success: true, message: 'Slack webhook saved and activated' });
+    } catch (err: any) {
+      console.error('Error saving Slack webhook:', err);
+      return res.status(500).json({ error: err.message || 'Failed to save Slack webhook' });
+    }
+  }
+
+  /**
+   * POST /api/slack/test-alert
+   * Sends an immediate test rate limit alert to verify Slack connectivity.
+   */
+  public static async testAlert(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id || 'default-user-oliver-brown';
+      const { SlackService } = await import('../services/slack.service');
+      const nextWindow = new Date(Date.now() + 3600000);
+
+      const success = await SlackService.notifyRateLimitBreach(
+        userId,
+        'oliver.brown@domain.io',
+        200,
+        nextWindow
+      );
+
+      if (!success) {
+        return res.status(400).json({ error: 'Failed to send test alert. Please verify your webhook URL.' });
+      }
+
+      return res.json({ success: true, message: 'Test rate limit alert sent to Slack!' });
+    } catch (err: any) {
+      console.error('Error sending test alert:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  }
 }

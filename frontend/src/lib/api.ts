@@ -112,6 +112,19 @@ export const api = {
     return fetchJson<{ authUrl: string }>(`${API_BASE}/slack/install`);
   },
 
+  async saveSlackWebhook(webhookUrl: string, channelName?: string): Promise<{ success: boolean; message: string }> {
+    return fetchJson<{ success: boolean; message: string }>(`${API_BASE}/slack/webhook`, {
+      method: 'POST',
+      body: JSON.stringify({ webhookUrl, channelName }),
+    });
+  },
+
+  async testSlackAlert(): Promise<{ success: boolean; message: string }> {
+    return fetchJson<{ success: boolean; message: string }>(`${API_BASE}/slack/test-alert`, {
+      method: 'POST',
+    });
+  },
+
   async disconnectSlack(): Promise<{ success: boolean; message: string }> {
     return fetchJson<{ success: boolean; message: string }>(`${API_BASE}/slack/disconnect`, {
       method: 'DELETE',

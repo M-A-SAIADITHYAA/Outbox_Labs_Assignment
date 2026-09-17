@@ -7,6 +7,8 @@ const router = Router();
 router.get('/install', optionalAuth, SlackController.install);
 router.get('/callback', SlackController.callback);
 router.get('/status', optionalAuth, SlackController.getStatus);
+router.post('/webhook', optionalAuth, SlackController.saveWebhook);
+router.post('/test-alert', optionalAuth, SlackController.testAlert);
 router.delete('/disconnect', optionalAuth, SlackController.disconnect);
 
 export default router;

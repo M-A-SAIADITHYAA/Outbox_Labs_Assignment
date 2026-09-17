@@ -35,8 +35,12 @@ export class EmailController {
     try {
       const parsed = scheduleBatchSchema.safeParse(req.body);
       if (!parsed.success) {
+        const firstIssue = parsed.error.issues[0];
+        const errorMsg = firstIssue
+          ? `Validation failed: ${firstIssue.message}`
+          : 'Validation failed';
         return res.status(400).json({
-          error: 'Validation failed',
+          error: errorMsg,
           details: parsed.error.format(),
         });
       }

@@ -151,6 +151,13 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidEmail = allRecipients.find((e) => !emailRegex.test(e));
+    if (invalidEmail) {
+      setErrorMsg(`Invalid recipient email format: "${invalidEmail}". Check for missing dots or typos (e.g. .com).`);
+      return;
+    }
+
     if (!subject.trim()) {
       setErrorMsg('Please enter a subject.');
       return;

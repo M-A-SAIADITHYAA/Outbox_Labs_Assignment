@@ -16,7 +16,8 @@ export const indexingWorker = new Worker<EmailIndexingJobData>(
 
     const success = await ElasticsearchService.indexEmailDocument(emailRecordId);
     if (!success) {
-      throw new Error(`Failed to index document ${emailRecordId} into Elasticsearch`);
+      console.warn(`[ES Worker] ⚠️ Skipped indexing for document ${emailRecordId} (not found in database)`);
+      return { success: false, reason: 'not_found' };
     }
 
     console.log(`[ES Worker] 🔎 Document ${emailRecordId} indexed successfully.`);

@@ -62,8 +62,19 @@ export class ElasticsearchService {
 
       return true;
     } catch (err: any) {
+      // If Elasticsearch is offline or unreachable (e.g. cloud deployment without managed ES cluster)
+      if (
+        err.name === 'ConnectionError' ||
+        err.message?.includes('ECONNREFUSED') ||
+        err.message?.includes('ENOTFOUND') ||
+        err.meta?.connection?.status === 'dead'
+      ) {
+        console.warn(`[ES] Elasticsearch offline or unreachable. Skipping background index; PostgreSQL fallback is active.`);
+        return true; // Gracefully complete the BullMQ job so it doesn't fail
+      }
+
       console.error(`[ES] Failed to index document ${emailRecordId}:`, err.message);
-      throw err; // Allow BullMQ indexing worker to retry
+      throw err; // Allow BullMQ indexing worker to retry for other transient errors
     }
   }
 
@@ -79,8 +90,15 @@ export class ElasticsearchService {
       });
       return true;
     } catch (err: any) {
-      // Ignore 404 not found
-      if (err.statusCode === 404 || err.meta?.statusCode === 404) return true;
+      // Ignore 404 not found or offline errors
+      if (
+        err.statusCode === 404 ||
+        err.meta?.statusCode === 404 ||
+        err.name === 'ConnectionError' ||
+        err.message?.includes('ECONNREFUSED')
+      ) {
+        return true;
+      }
       console.error(`[ES] Failed to delete document ${emailRecordId}:`, err.message);
       return false;
     }

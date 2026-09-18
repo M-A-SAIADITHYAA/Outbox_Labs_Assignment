@@ -48,8 +48,20 @@ function HomePageContent() {
 
       const sendersRes = await api.getSenders();
       setSenders(sendersRes.senders);
-    } catch {
-      // If unauthenticated, auto-login to default demo user Oliver Brown
+    } catch (err: any) {
+      // If network error (backend server is stopped or restarting), preserve session and avoid redirecting to /login
+      const isNetworkError =
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('NetworkError') ||
+        err.message?.includes('Failed request') ||
+        err.message?.includes('ECONNREFUSED');
+
+      if (isNetworkError) {
+        console.warn('Backend server is temporarily unreachable (restarting). Preserving session.');
+        return;
+      }
+
+      // If unauthenticated (401), auto-login to default demo user Oliver Brown
       try {
         const devLoginRes = await api.devLogin('oliver.brown@domain.io', 'Oliver Brown');
         setUser(devLoginRes.user);

@@ -18,7 +18,10 @@
     "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build",
     "clear:emails": "npm --prefix backend run clear:emails",
-    "test": "npm --prefix backend test"
+    "test": "npm --prefix backend test",
+    "test:load-1000": "npm --prefix backend run test:load-1000",
+    "test:crash": "npm --prefix backend run test:crash",
+    "test:phase5": "npm --prefix backend run test:phase5"
   },
   "keywords": [
     "reachinbox",

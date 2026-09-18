@@ -15,6 +15,7 @@ const prisma = new PrismaClient();
 export const app = express();
 
 // Middleware configuration
+// CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {

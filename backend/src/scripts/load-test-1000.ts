@@ -12,17 +12,38 @@ async function run1000EmailLoadSimulation() {
   console.log('🚀 =================================================================\n');
 
   try {
-    // STEP 1: Verify Seed Data
+    // STEP 1: Resolve Target User & Sender Identity
     console.log('📦 STEP 1: Resolving sender identity and user...');
-    const user = await prisma.user.findFirst({
-      where: { email: 'oliver.brown@domain.io' },
+    let user = await prisma.user.findFirst({
+      where: { email: 'saiadithyaa2306@gmail.com' },
     });
-    if (!user) throw new Error('Seeded user Oliver Brown not found');
 
-    const sender = await prisma.senderIdentity.findFirst({
-      where: { userId: user.id, isDefault: true },
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: 'saiadithyaa2306@gmail.com',
+          name: 'Sai Adithyaa',
+          googleId: 'google-saiadithyaa-loadtest',
+        },
+      });
+    }
+
+    let sender = await prisma.senderIdentity.findFirst({
+      where: { userId: user.id, email: 'saiadithyaa2306@gmail.com' },
     });
-    if (!sender) throw new Error('Default sender identity not found');
+
+    if (!sender) {
+      sender = await prisma.senderIdentity.create({
+        data: {
+          userId: user.id,
+          email: 'saiadithyaa2306@gmail.com',
+          name: user.name,
+          hourlyLimit: 200,
+          minDelayMs: 2000,
+          isDefault: true,
+        },
+      });
+    }
 
     console.log(`  User: ${user.name} (${user.id})`);
     console.log(`  Sender: ${sender.name} <${sender.email}>\n`);

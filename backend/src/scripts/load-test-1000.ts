@@ -195,26 +195,30 @@ async function run1000EmailLoadSimulation() {
     console.log('  ✅ Atomic Redis Lua script strictly enforced the hourly quota with zero race conditions.');
     console.log('  ✅ Deduplication verified: exactly 1 Slack alert was emitted for the breach window.\n');
 
-    // STEP 6: Clean Up Stress Test Keys and Temporary Records
-    console.log('🧹 STEP 6: Cleaning up stress test keys and test campaign...');
-    // Delete test rate limiter redis keys
+    // STEP 6: Clean Up Rate Limiter Test Keys (Preserve Scheduled Emails for UI Demo)
+    console.log('🧹 STEP 6: Resetting simulation rate limiter counters...');
     const hourWindow = new Date(stressTimestamp).toISOString().slice(0, 13);
     await redisClient.del(`ratelimit:sender:${TEST_SENDER_ID}:${hourWindow}:count`);
     await redisClient.del(`ratelimit:sender:${TEST_SENDER_ID}:${hourWindow}:slack_sent`);
     await redisClient.del(`ratelimit:sender:${TEST_SENDER_ID}:last_send_ms`);
 
-    // Clean up created BullMQ jobs
-    const delayedJobs = await emailDispatchQueue.getJobs(['delayed'], 0, 1000);
-    const batchJobIds = delayedJobs.filter((j) => j.data?.campaignId === campaign.id);
-    for (const j of batchJobIds) {
-      await j.remove();
+    const shouldAutoClean = process.argv.includes('--clean');
+    if (shouldAutoClean) {
+      // Optional manual cleanup flag
+      const delayedJobs = await emailDispatchQueue.getJobs(['delayed'], 0, 1000);
+      const batchJobIds = delayedJobs.filter((j) => j.data?.campaignId === campaign.id);
+      for (const j of batchJobIds) {
+        await j.remove();
+      }
+      await prisma.emailRecord.deleteMany({ where: { campaignId: campaign.id } });
+      await prisma.campaign.delete({ where: { id: campaign.id } });
+      console.log(`  Removed ${batchJobIds.length} simulation jobs and records from PostgreSQL.`);
+    } else {
+      console.log('  ✨ 1,000 scheduled emails preserved in PostgreSQL!');
+      console.log('  ✨ 1,000 delayed jobs active in BullMQ (/admin/queues).');
+      console.log(`  🌐 Check your dashboard now: http://localhost:3000 (Logged in as ${user.email})`);
+      console.log('  💡 Tip: To clear all emails anytime, click the Trash 🗑️ icon in the UI header or run "npm run clear:emails".');
     }
-    console.log(`  Removed ${batchJobIds.length} simulation jobs from BullMQ queue.`);
-
-    // Clean up PostgreSQL records
-    await prisma.emailRecord.deleteMany({ where: { campaignId: campaign.id } });
-    await prisma.campaign.delete({ where: { id: campaign.id } });
-    console.log(`  Cleaned up simulation campaign ${campaign.id} and records from PostgreSQL.`);
 
     console.log('\n🎉 =================================================================');
     console.log('🎉 1,000-EMAIL LOAD SIMULATION PASSED WITH 100% SUCCESS!');

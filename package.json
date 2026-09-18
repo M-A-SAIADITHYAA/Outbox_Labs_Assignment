@@ -12,6 +12,8 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "dev:backend": "npm --prefix backend run dev",
+    "stop:backend": "lsof -ti :5001 | xargs kill -9 2>/dev/null || true",
+    "restart:backend": "lsof -ti :5001 | xargs kill -9 2>/dev/null || true; npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build",

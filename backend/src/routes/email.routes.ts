@@ -11,6 +11,7 @@ router.get('/senders', EmailController.getSenders);
 router.get('/debug-status', EmailController.debugStatus);
 router.post('/reconcile-overdue', EmailController.reconcileOverdue);
 router.post('/reset-rate-limit', EmailController.resetRateLimit);
+router.post('/clear-all', EmailController.clearAll);
 router.get('/:id', EmailController.getById);
 router.delete('/:id', EmailController.delete);
 

@@ -198,6 +198,26 @@ export class EmailController {
   }
 
   /**
+   * POST /api/emails/clear-all
+   * Purges all email records from database, drains BullMQ queues, clears search indices,
+   * and resets all rate limits.
+   */
+  public static async clearAll(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || undefined;
+      const result = await EmailService.clearAllEmails(userId);
+      return res.json({
+        success: true,
+        message: `Successfully purged ${result.deletedEmailsCount} emails and ${result.deletedCampaignsCount} campaigns.`,
+        ...result,
+      });
+    } catch (error: any) {
+      console.error('Error in clearAll:', error);
+      return res.status(500).json({ error: error.message || 'Failed to clear emails' });
+    }
+  }
+
+  /**
    * GET /api/emails/debug-status
    */
   public static async debugStatus(req: Request, res: Response) {

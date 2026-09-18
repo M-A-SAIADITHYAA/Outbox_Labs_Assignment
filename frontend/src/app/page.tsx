@@ -164,6 +164,23 @@ function HomePageContent() {
     router.push('/login');
   };
 
+  const handleClearAll = async () => {
+    if (!window.confirm('Are you sure you want to clear all sent and scheduled emails and reset the queues?')) {
+      return;
+    }
+    try {
+      setRefreshing(true);
+      await api.clearAllEmails();
+      await loadEmails(true);
+      setScheduledCount(0);
+      setSentCount(0);
+    } catch (err: any) {
+      alert('Failed to clear emails: ' + (err.message || 'Unknown error'));
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-white text-gray-900 overflow-hidden font-sans">
       {/* Left Sidebar (Figma Screen 2 & 3) */}
@@ -185,6 +202,7 @@ function HomePageContent() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onRefresh={() => loadEmails(true)}
+          onClearAll={handleClearAll}
           isRefreshing={refreshing}
           searchEngine={searchEngine}
           searchTookMs={searchTookMs}

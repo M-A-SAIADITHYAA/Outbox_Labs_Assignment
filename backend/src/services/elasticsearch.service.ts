@@ -105,6 +105,33 @@ export class ElasticsearchService {
   }
 
   /**
+   * Clears all indexed documents from the search index.
+   */
+  public static async clearSearchIndex(): Promise<boolean> {
+    try {
+      await esClient.deleteByQuery({
+        index: EMAIL_INDEX_NAME,
+        body: {
+          query: { match_all: {} },
+        },
+        refresh: true,
+      });
+      return true;
+    } catch (err: any) {
+      if (
+        err.statusCode === 404 ||
+        err.meta?.statusCode === 404 ||
+        err.name === 'ConnectionError' ||
+        err.message?.includes('ECONNREFUSED')
+      ) {
+        return true;
+      }
+      console.warn('[ES] Could not clear search index:', err.message);
+      return false;
+    }
+  }
+
+  /**
    * Full-text search across recipient, subject, and body with automatic PostgreSQL fallback.
    */
   public static async searchEmails(params: SearchEmailsParams): Promise<SearchEmailsResult> {

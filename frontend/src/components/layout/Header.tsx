@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Search, Filter, RotateCw, Zap } from 'lucide-react';
+import { Search, Filter, RotateCw, Zap, Trash2 } from 'lucide-react';
 
 interface HeaderProps {
   searchQuery: string;
   onSearchChange: (val: string) => void;
   onRefresh: () => void;
+  onClearAll?: () => void;
   isRefreshing?: boolean;
   searchEngine?: string;
   searchTookMs?: number;
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   searchQuery,
   onSearchChange,
   onRefresh,
+  onClearAll,
   isRefreshing = false,
   searchEngine,
   searchTookMs,
@@ -55,6 +57,17 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <RotateCw className="w-4 h-4" />
         </button>
+
+        {/* Clear All Demo Emails */}
+        {onClearAll && (
+          <button
+            onClick={onClearAll}
+            title="Clear all emails & reset queues"
+            className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Latency & Engine Indicator (Bonus assignment feature) */}

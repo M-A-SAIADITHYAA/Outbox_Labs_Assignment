@@ -1,7 +1,9 @@
 import { PrismaClient, EmailStatus } from '@prisma/client';
 import crypto from 'crypto';
-import { enqueueEmailDispatchJob, EmailDispatchJobData } from '../queues/email.queue';
-import { enqueueIndexingJob } from '../queues/indexing.queue';
+import { enqueueEmailDispatchJob, emailDispatchQueue, EmailDispatchJobData } from '../queues/email.queue';
+import { enqueueIndexingJob, emailIndexingQueue } from '../queues/indexing.queue';
+import { RateLimiterService } from './rate-limiter.service';
+import { ElasticsearchService } from './elasticsearch.service';
 import { env } from '../config/env';
 
 const prisma = new PrismaClient();
@@ -366,5 +368,51 @@ export class EmailService {
     }
 
     return overdueEmails.length;
+  }
+
+  /**
+   * Completely purges all emails and campaigns from PostgreSQL, drains BullMQ queues,
+   * resets Redis rate limiters, and wipes the search index.
+   */
+  public static async clearAllEmails(userId?: string) {
+    // 1. Drain & clean BullMQ queues
+    try {
+      await emailDispatchQueue.drain();
+      await emailDispatchQueue.clean(0, 5000, 'completed');
+      await emailDispatchQueue.clean(0, 5000, 'failed');
+      await emailDispatchQueue.clean(0, 5000, 'delayed');
+      await emailDispatchQueue.clean(0, 5000, 'wait');
+      await emailIndexingQueue.drain();
+      await emailIndexingQueue.clean(0, 5000, 'completed');
+      await emailIndexingQueue.clean(0, 5000, 'failed');
+    } catch (err: any) {
+      console.warn('[Queue] Warning while draining queues:', err.message);
+    }
+
+    // 2. Clear Database records
+    const where = userId ? { userId } : {};
+    const deletedEmails = await prisma.emailRecord.deleteMany({ where });
+    const deletedCampaigns = await prisma.campaign.deleteMany({ where });
+
+    // 3. Reset rate limit counters
+    try {
+      await RateLimiterService.resetAllLimits();
+    } catch (err: any) {
+      console.warn('[RateLimiter] Warning while resetting limits:', err.message);
+    }
+
+    // 4. Clear Elasticsearch index
+    try {
+      await ElasticsearchService.clearSearchIndex();
+    } catch (err: any) {
+      console.warn('[ES] Warning while clearing index:', err.message);
+    }
+
+    console.log(`[ClearAll] 🧹 Purged ${deletedEmails.count} emails and ${deletedCampaigns.count} campaigns.`);
+
+    return {
+      deletedEmailsCount: deletedEmails.count,
+      deletedCampaignsCount: deletedCampaigns.count,
+    };
   }
 }

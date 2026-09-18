@@ -17,6 +17,7 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build",
+    "clear:emails": "npm --prefix backend run clear:emails",
     "test": "npm --prefix backend test"
   },
   "keywords": [

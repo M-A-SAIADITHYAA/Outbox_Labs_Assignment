@@ -19,7 +19,8 @@
     "test": "jest --runInBand",
     "test:load-1000": "ts-node src/scripts/load-test-1000.ts",
     "test:crash": "ts-node src/scripts/test-crash-resilience.ts",
-    "test:phase5": "ts-node src/scripts/test-phase5.ts"
+    "test:phase5": "ts-node src/scripts/test-phase5.ts",
+    "clear:emails": "ts-node src/scripts/clear-all-emails.ts"
   },
   "dependencies": {
     "@bull-board/api": "^5.21.4",

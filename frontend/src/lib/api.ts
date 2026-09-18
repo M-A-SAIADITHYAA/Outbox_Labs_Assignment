@@ -120,6 +120,12 @@ export const api = {
     });
   },
 
+  async clearAllEmails(): Promise<{ success: boolean; message: string; deletedEmailsCount: number }> {
+    return fetchJson<{ success: boolean; message: string; deletedEmailsCount: number }>(`${API_BASE}/emails/clear-all`, {
+      method: 'POST',
+    });
+  },
+
   async scheduleBatch(payload: ScheduleEmailPayload): Promise<{
     campaignId: string;
     totalScheduled: number;

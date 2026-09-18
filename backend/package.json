@@ -5,6 +5,11 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:backend": "npm run dev",
+    "stop": "lsof -ti :5001 | xargs kill -9 2>/dev/null || true",
+    "stop:backend": "npm run stop",
+    "restart": "npm run stop; npm run dev",
+    "restart:backend": "npm run restart",
     "build": "npx prisma generate && tsc",
     "start": "npx prisma db push --accept-data-loss && node dist/server.js",
     "prisma:generate": "prisma generate",
